@@ -39,9 +39,36 @@ export const mainStore = defineStore("mainData", {
           show: true,
         },
         {
+          label: "新浪财经",
+          name: "sina-news",
+          params: { type: "8" },
+          order: 4,
+          show: true,
+        },
+        {
+          label: "澎湃新闻",
+          name: "thepaper",
+          order: 5,
+          show: true,
+        },
+        {
+          label: "新浪国内",
+          name: "sina-news",
+          params: { type: "4" },
+          order: 6,
+          show: true,
+        },
+        {
+          label: "新浪国际",
+          name: "sina-news",
+          params: { type: "5" },
+          order: 7,
+          show: true,
+        },
+        {
           label: "36氪",
           name: "36kr",
-          order: 4,
+          order: 8,
           show: true,
         },
         {
