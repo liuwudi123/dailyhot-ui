@@ -58,6 +58,22 @@
           </n-popover>
           <n-popover>
             <template #trigger>
+              <n-button
+                secondary
+                strong
+                round
+                :loading="pushLoading"
+                @click="pushToFeishu"
+              >
+                <template #icon>
+                  <n-icon :component="Send" />
+                </template>
+              </n-button>
+            </template>
+            立即推送至飞书
+          </n-popover>
+          <n-popover>
+            <template #trigger>
               <n-button secondary strong round @click="router.push('/setting')">
                 <template #icon>
                   <n-icon :component="SettingTwo" />
@@ -94,7 +110,10 @@ import {
   Refresh,
   SettingTwo,
   HamburgerButton,
+  Send,
 } from "@icon-park/vue-next";
+import axios from "axios";
+import { useMessage } from "naive-ui";
 import { getCurrentTime } from "@/utils/getTime.js";
 import { mainStore } from "@/store";
 import { NText, NIcon } from "naive-ui";
@@ -102,8 +121,26 @@ import { useRouter } from "vue-router";
 
 const router = useRouter();
 const store = mainStore();
+const message = useMessage();
 const timeInterval = ref(null);
 const showRefresh = ref(false);
+const pushLoading = ref(false);
+
+const pushToFeishu = async () => {
+  pushLoading.value = true;
+  try {
+    const res = await axios.get("http://localhost:6688/feishu");
+    if (res.status === 200) {
+      message.success("🚀 推送成功！请查看飞书");
+    } else {
+      message.error("❌ 推送失败: " + res.data.message);
+    }
+  } catch (e) {
+    message.error("❌ 接口异常: " + e.message);
+  } finally {
+    pushLoading.value = false;
+  }
+};
 
 // 移动端时间模块
 const timeRender = () => {
