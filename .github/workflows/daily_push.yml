@@ -1,28 +1,18 @@
 name: Daily Intelligence Push
-
 on:
   schedule:
     - cron: '30 1 * * *'
   workflow_dispatch:
-
 jobs:
   push:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
-
-      - name: Install dependencies
-        run: |
-          npm install axios cheerio
-
-      - name: Run Push Script
-        env:
+      - run: npm install axios cheerio
+      - env:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           FEISHU_DEFAULT_CHAT_ID: ${{ secrets.FEISHU_DEFAULT_CHAT_ID }}
