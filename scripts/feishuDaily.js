@@ -76,18 +76,18 @@ async function run() {
     const translatedGitHub = await Promise.all(github.map(async v => ({ ...v, translatedDesc: await translate(v.desc) })));
 
     const card = {
-        header: { title: { content: "🕵️ Intelligence Report", tag: "plain_text" }, template: "blue" },
+        header: { title: { content: "🕵️ Intelligence Report (Daily)", tag: "plain_text" }, template: "blue" },
         elements: [
             { tag: "div", text: { tag: "lark_md", content: "**🏛️ Politics (The Paper)**" } },
-            ...politics.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i+1}. [${v.title}](${v.url})` } })),
+            ...politics.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. [${v.title}](${v.url})` } })),
             { tag: "hr" },
             { tag: "div", text: { tag: "lark_md", content: "**📉 Finance (Sina)**" } },
-            ...finance.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i+1}. [${v.title}](${v.url})` } })),
+            ...finance.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. [${v.title}](${v.url})` } })),
             { tag: "hr" },
             { tag: "div", text: { tag: "lark_md", content: "**🌐 GitHub Trending**" } },
-            ...translatedGitHub.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i+1}. **${v.name}**\n_${v.translatedDesc}_\n🔗 [View](${v.url})` } })),
+            ...translatedGitHub.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. **${v.name}**\n_${v.translatedDesc}_\n🔗 [View](${v.url})` } })),
             { tag: "hr" },
-            { tag: "note", elements: [{ tag: "plain_text", content: `Generated: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}` }] }
+            { tag: "note", elements: [{ tag: "plain_text", content: `Daily Automation | Time: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}` }] }
         ]
     };
 
