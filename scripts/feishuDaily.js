@@ -21,19 +21,47 @@ async function getTenantAccessToken() {
     }
 }
 
-async function fetchThePaper() {
+async function fetchWSCN() {
     try {
-        const res = await axios.get('https://cache.thepaper.cn/contentapi/wwwIndex/rightSidebar');
-        return res.data.data.hotNews.slice(0, 5).map(v => ({ title: v.name, url: `https://www.thepaper.cn/newsDetail_forward_${v.contId}` }));
+        const res = await axios.get('https://api-prod.wallstcn.com/v1/it/newsflash?channel=global-lib&limit=5', {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+        return res.data.data.items.map(v => ({
+            title: v.content_text.replace(/<[^>]+>/g, '').slice(0, 100).trim() + '...',
+            url: v.uri || 'https://wallstreetcn.com/newsflash'
+        }));
     } catch (e) { return []; }
 }
 
-async function fetchSinaFinance() {
+async function fetchCLS() {
     try {
-        const res = await axios.get('https://top.finance.sina.com.cn/ws/GetTopDataList.php?top_type=day&top_cat=finance_0_suda&top_show_num=5');
-        const jsonStr = res.data.match(/var data = (.*);/)[1];
-        return JSON.parse(jsonStr).data.slice(0, 5).map(v => ({ title: v.title, url: v.url }));
+        const res = await axios.get('https://www.cls.cn/nodeapi/telegraphList?rn=5&os=web', {
+            headers: { 'User-Agent': 'Mozilla/5.0' }
+        });
+        return res.data.data.roll_data.map(v => ({
+            title: (v.title || v.content).slice(0, 100).trim() + '...',
+            url: `https://www.cls.cn/detail/${v.id}`
+        }));
     } catch (e) { return []; }
+}
+
+async function fetchTwitter(user = 'BreakingNews') {
+    try {
+        // 使用 RSSHub 公共实例获取 Twitter 信息
+        const res = await axios.get(`https://rsshub.app/twitter/user/${user}`, { timeout: 5000 });
+        const $ = cheerio.load(res.data, { xmlMode: true });
+        const items = [];
+        $('item').slice(0, 5).each((i, el) => {
+            items.push({
+                title: $(el).find('title').text().trim(),
+                url: $(el).find('link').text().trim()
+            });
+        });
+        return items;
+    } catch (e) { 
+        console.log(`Twitter (${user}) fetch failed, skipping...`);
+        return []; 
+    }
 }
 
 async function fetchGitHub() {
@@ -72,22 +100,34 @@ async function run() {
     const token = await getTenantAccessToken();
     if (!token) return;
 
-    const [politics, finance, github] = await Promise.all([fetchThePaper(), fetchSinaFinance(), fetchGitHub()]);
+    // 获取高质量情报源
+    const [wscn, cls, github, twitter] = await Promise.all([
+        fetchWSCN(), 
+        fetchCLS(), 
+        fetchGitHub(),
+        fetchTwitter('DeItaone') // Deltaone 是 Twitter 上极高质量的实时金融情报源
+    ]);
+    
     const translatedGitHub = await Promise.all(github.map(async v => ({ ...v, translatedDesc: await translate(v.desc) })));
 
     const card = {
-        header: { title: { content: "🕵️ Intelligence Report (Daily)", tag: "plain_text" }, template: "blue" },
+        header: { title: { content: "🕵️ Global Intelligence Report", tag: "plain_text" }, template: "purple" },
         elements: [
-            { tag: "div", text: { tag: "lark_md", content: "**🏛️ Politics (The Paper)**" } },
-            ...politics.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. [${v.title}](${v.url})` } })),
+            { tag: "div", text: { tag: "lark_md", content: "**🌍 Global Macro (Wall Street Insight)**" } },
+            ...wscn.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. [${v.title}](${v.url})` } })),
             { tag: "hr" },
-            { tag: "div", text: { tag: "lark_md", content: "**📉 Finance (Sina)**" } },
-            ...finance.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. [${v.title}](${v.url})` } })),
+            { tag: "div", text: { tag: "lark_md", content: "**🇨🇳 China Intelligence (Cailianpress)**" } },
+            ...cls.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. [${v.title}](${v.url})` } })),
             { tag: "hr" },
-            { tag: "div", text: { tag: "lark_md", content: "**🌐 GitHub Trending**" } },
+            { tag: "div", text: { tag: "lark_md", content: "**🐦 Real-time Twitter (DeItaone)**" } },
+            ...(twitter.length > 0 
+                ? twitter.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. [${v.title}](${v.url})` } }))
+                : [{ tag: "div", text: { tag: "lark_md", content: "_Twitter feed temporarily unavailable_" } }]),
+            { tag: "hr" },
+            { tag: "div", text: { tag: "lark_md", content: "**💻 GitHub Trending**" } },
             ...translatedGitHub.map((v, i) => ({ tag: "div", text: { tag: "lark_md", content: `${i + 1}. **${v.name}**\n_${v.translatedDesc}_\n🔗 [View](${v.url})` } })),
             { tag: "hr" },
-            { tag: "note", elements: [{ tag: "plain_text", content: `Daily Automation | Time: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}` }] }
+            { tag: "note", elements: [{ tag: "plain_text", content: `Intelligence Engine | Time: ${new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}` }] }
         ]
     };
 

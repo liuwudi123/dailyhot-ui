@@ -5,6 +5,7 @@
   "github": "https://github.com/imsyy",
   "version": "1.2.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
